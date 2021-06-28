@@ -37,6 +37,7 @@ class Question(models.Model):
     is_published = models.BooleanField(default=True)
 
     objects = QuestionQuerySet.as_manager()
+    default_confidential_manager = ConfidentialQuerySet.as_manager()
 
     def __str__(self) -> str:
         return self.title
