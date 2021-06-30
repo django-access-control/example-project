@@ -3,7 +3,6 @@ from django.contrib.contenttypes.models import ContentType
 from django.test import TestCase
 from django_access_control.models import all_field_names
 
-from forum import settings
 from questions.models import Question
 
 
@@ -37,11 +36,12 @@ class BaseQuestionsTestCase(TestCase):
         cls.user_two = User.objects.create_user("user_two")
 
         cls.question = Question.objects.create(title="Ipsum?", body="Lorem ipsum.", creator=cls.user_one)
+        cls.unpublished_question = Question.objects.create(title="?", body="?", creator=cls.user_one, is_published=False)
 
-        cls.qs = Question.default_confidential_manager.get_queryset()
 
 
 class ConfidentialQuerySetTest(BaseQuestionsTestCase):
+    qs = Question.default_confidential_manager.get_queryset()
 
     def test_superuser_has_full_access(self):
         # table wide permissions
@@ -140,3 +140,39 @@ class ConfidentialQuerySetTest(BaseQuestionsTestCase):
         self.assertFalse(self.qs.rows_with_delete_permission(user).contains(self.question))
 
         self.assertFalse(self.qs.has_some_permissions(user))
+
+class QuestionQuerySetTest(BaseQuestionsTestCase):
+    qs = Question.objects.get_queryset()
+
+
+    def test_add_permission(self):
+        # a regular user without any explicit permissions can add
+        self.assertTrue(self.qs.has_table_wide_add_permission(self.user_one))
+
+
+    def test_view_permission(self):
+        # a user can view a published question without special privileges
+        self.assertTrue(self.qs.rows_with_view_permission(self.user_one).contains(self.question))
+        # a user cannot view an unpublished question without special privileges
+        self.assertFalse(self.qs.rows_with_view_permission(self.user_two).contains(self.unpublished_question))
+        # However, if you are the author, you can see a question even if it is unpublished
+        self.assertTrue(self.qs.rows_with_view_permission(self.user_one).contains(self.unpublished_question))
+        # And if you are a superuser, you can see everything
+        self.assertTrue(self.qs.rows_with_view_permission(self.superuser).contains(self.question))
+        self.assertTrue(self.qs.rows_with_view_permission(self.superuser).contains(self.unpublished_question))
+
+
+    #
+    #
+    #     # row permissions
+    #     self.assertTrue(self.qs.rows_with_view_permission(self.superuser).contains(self.question))
+    #     self.assertTrue(self.qs.rows_with_change_permission(self.superuser).contains(self.question))
+    #     self.assertTrue(self.qs.rows_with_delete_permission(self.superuser).contains(self.question))
+    #
+    #     # field permissions
+    #     self.assertEqual(self.qs.viewable_fields(self.superuser, self.question), all_field_names(self.question))
+    #     self.assertEqual(self.qs.changeable_fields(self.superuser, self.question), all_field_names(self.question))
+    #
+    #     self.assertTrue(self.qs.has_some_permissions(self.superuser))
+    #
+
