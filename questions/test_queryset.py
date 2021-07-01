@@ -36,8 +36,8 @@ class BaseQuestionsTestCase(TestCase):
         cls.user_two = User.objects.create_user("user_two")
 
         cls.question = Question.objects.create(title="Ipsum?", body="Lorem ipsum.", creator=cls.user_one)
-        cls.unpublished_question = Question.objects.create(title="?", body="?", creator=cls.user_one, is_published=False)
-
+        cls.unpublished_question = Question.objects.create(title="?", body="?", creator=cls.user_one,
+                                                           is_published=False)
 
 
 class ConfidentialQuerySetTest(BaseQuestionsTestCase):
@@ -141,14 +141,13 @@ class ConfidentialQuerySetTest(BaseQuestionsTestCase):
 
         self.assertFalse(self.qs.has_some_permissions(user))
 
+
 class QuestionQuerySetTest(BaseQuestionsTestCase):
     qs = Question.objects.get_queryset()
-
 
     def test_add_permission(self):
         # a regular user without any explicit permissions can add
         self.assertTrue(self.qs.has_table_wide_add_permission(self.user_one))
-
 
     def test_view_permission(self):
         # a user can view a published question without special privileges
@@ -161,18 +160,29 @@ class QuestionQuerySetTest(BaseQuestionsTestCase):
         self.assertTrue(self.qs.rows_with_view_permission(self.superuser).contains(self.question))
         self.assertTrue(self.qs.rows_with_view_permission(self.superuser).contains(self.unpublished_question))
 
+    def test_row_level_change_permission(self):
+        # If you are superuser, you can see everything
+        self.assertTrue(self.qs.rows_with_change_permission(self.superuser).contains(self.question))
+        self.assertTrue(self.qs.rows_with_change_permission(self.superuser).contains(self.unpublished_question))
+        # If you are a stuff member, you can see everything
+        self.assertTrue(self.qs.rows_with_change_permission(self.staff_member).contains(self.question))
+        self.assertTrue(self.qs.rows_with_change_permission(self.staff_member).contains(self.unpublished_question))
+        # If you have table wide change permission, you can see everything
+        self.assertTrue(self.qs.rows_with_change_permission(self.change_permission_holder).contains(self.question))
+        self.assertTrue(
+            self.qs.rows_with_change_permission(self.change_permission_holder).contains(self.unpublished_question))
+        # Otherwise you can only change your own questions
+        self.assertTrue(self.qs.rows_with_change_permission(self.user_one).contains(self.question))
+        self.assertFalse(self.qs.rows_with_change_permission(self.user_two).contains(self.question))
 
-    #
-    #
-    #     # row permissions
-    #     self.assertTrue(self.qs.rows_with_view_permission(self.superuser).contains(self.question))
-    #     self.assertTrue(self.qs.rows_with_change_permission(self.superuser).contains(self.question))
-    #     self.assertTrue(self.qs.rows_with_delete_permission(self.superuser).contains(self.question))
-    #
-    #     # field permissions
-    #     self.assertEqual(self.qs.viewable_fields(self.superuser, self.question), all_field_names(self.question))
-    #     self.assertEqual(self.qs.changeable_fields(self.superuser, self.question), all_field_names(self.question))
-    #
-    #     self.assertTrue(self.qs.has_some_permissions(self.superuser))
-    #
-
+    def test_field_level_change_permission(self):
+        all_fields = frozenset({'title', 'is_published', 'body', 'creator'})
+        # Superusers and change permission holders can change all fields
+        self.assertEqual(self.qs.changeable_fields(self.superuser, self.question), all_fields)
+        self.assertEqual(self.qs.changeable_fields(self.change_permission_holder, self.question), all_fields)
+        # Authors can change only the body of their question
+        self.assertEqual(self.qs.changeable_fields(self.user_one, self.question), frozenset({"body"}))
+        # Stuff members can publish and unpublish the question
+        self.assertEqual(self.qs.changeable_fields(self.staff_member, self.question), frozenset({"is_published"}))
+        # Other users cannot change any of the fields
+        self.assertEqual(self.qs.changeable_fields(self.user_two, self.question), frozenset())

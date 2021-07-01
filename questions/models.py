@@ -22,14 +22,15 @@ class QuestionQuerySet(ConfidentialQuerySet):
     def rows_with_change_permission(self, user: AbstractUser) -> QuerySet[Question]:
         if user.is_staff:
             return self
-        return (self if super().has_table_wide_view_permission(user) else self.none()) | \
+        return (self if super().has_table_wide_change_permission(user) else self.none()) | \
                (self.filter(creator=user) if user.is_authenticated else self.none())
 
-    def changeable_fields(self, user: AbstractUser, obj: Question) -> Set[str]:
-        if user.is_superuser or has_permission(user, "change", obj.__class__): return all_field_names(obj.__class__)
-        if obj.creator == user: return {"body"}
-        if user.email.endswith("@forum.io"): return {"is_published"}
-        return set()
+    def changeable_fields(self, user: AbstractUser, obj: Question) -> FrozenSet[str]:
+        if user.is_superuser or has_permission(user, "change", obj.__class__):
+            return frozenset(all_field_names(obj.__class__))
+        if obj.creator == user: return frozenset({"body"})
+        if user.is_staff: return frozenset({"is_published"})
+        return frozenset()
 
 
 class Question(models.Model):
