@@ -1,0 +1,21 @@
+{% extends 'admin/base.html' %}
+{% load i18n %}
+
+{% block usertools %}
+<div id="user-tools">
+    {% if user.is_authenticated %}
+    {% block welcome-msg %}
+        {% translate 'Welcome,' %}
+        <strong>{% firstof user.get_short_name user.get_username %}</strong>.
+    {% endblock %}
+        {% if user.has_usable_password %}
+        <a href="{% url 'admin:password_change' %}">{% translate 'Change password' %}</a> /
+        {% endif %}
+        <a href="{% url 'admin:logout' %}">{% translate 'Log out' %}</a>
+    {% else %}
+        <a href="{% url 'admin:login' %}">{% translate 'Log in' %}</a>
+    {% endif %}
+    {% block userlinks %}
+    {% endblock %}
+</div>
+{% endblock %}

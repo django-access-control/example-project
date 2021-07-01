@@ -17,5 +17,12 @@ from django.contrib import admin
 from django.urls import path
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    path('', admin.site.urls),
 ]
+
+# Customize the admin site
+admin.site.site_header = admin.site_title = "Forum of Ethics"
+admin.site.site_url = None
+admin.site.index_title = "Welcome to the conversation!"
+# Allow everyone to access the site even if they aren't logged in
+admin.site.has_permission = lambda request: True if "login" not in request.path or request.user.is_superuser else False
