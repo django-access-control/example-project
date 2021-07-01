@@ -1,9 +1,10 @@
 from django.contrib.auth.models import User, Permission
 from django.contrib.contenttypes.models import ContentType
 from django.test import TestCase
+
 from django_access_control.models import all_field_names
 
-from questions.models import Question
+from .models import Question
 
 
 class BaseQuestionsTestCase(TestCase):
