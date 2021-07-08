@@ -53,10 +53,10 @@ class ListViewTest(BaseAdminTestCase):
 
 
 class AddViewTest(BaseAdminTestCase):
-
-    @staticmethod
-    def get_add_page_form(client: Client):
-        response = client.get("/questions/question/add", follow=True)
+    ADD_VIEW_URL = "/questions/question/add"
+    @classmethod
+    def get_add_page_form(cls, client: Client):
+        response = client.get(cls.ADD_VIEW_URL, follow=True)
         return str(BeautifulSoup(response.content, 'html.parser').find(id="question_form"))
 
     def test_staff_member_can_submit_three_fields(self):
@@ -64,9 +64,10 @@ class AddViewTest(BaseAdminTestCase):
         self.assertTrue('<div class="form-row field-title">' in table)
         self.assertTrue('<div class="form-row field-body">' in table)
         self.assertTrue('<div class="form-row field-is_published">' in table)
+        self.staff_member_client.post()
 
     def test_anonymous_user_cannot_add_question(self):
-        response = self.anonymous_client.get("/questions/question/add", follow=True)
+        response = self.anonymous_client.get(self.ADD_VIEW_URL, follow=True)
         self.assertEqual(response.status_code, 403)
 
     def test_regular_user_can_submit_two_fields(self):
