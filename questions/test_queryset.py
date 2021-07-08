@@ -178,9 +178,8 @@ class QuestionQuerySetTest(BaseQuestionsTestCase):
 
     def test_field_level_change_permission(self):
         all_fields = frozenset({'title', 'is_published', 'body', 'creator'})
-        # Superusers and change permission holders can change all fields
+        # Superusers can change all fields
         self.assertEqual(self.qs.changeable_fields(self.superuser, self.question), all_fields)
-        self.assertEqual(self.qs.changeable_fields(self.change_permission_holder, self.question), all_fields)
         # Authors can change only the body of their question
         self.assertEqual(self.qs.changeable_fields(self.user_one, self.question), frozenset({"body"}))
         # Stuff members can publish and unpublish the question

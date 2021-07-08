@@ -54,6 +54,7 @@ class ListViewTest(BaseAdminTestCase):
 
 class AddViewTest(BaseAdminTestCase):
     ADD_VIEW_URL = "/questions/question/add"
+
     @classmethod
     def get_add_page_form(cls, client: Client):
         response = client.get(cls.ADD_VIEW_URL, follow=True)
@@ -64,7 +65,6 @@ class AddViewTest(BaseAdminTestCase):
         self.assertTrue('<div class="form-row field-title">' in table)
         self.assertTrue('<div class="form-row field-body">' in table)
         self.assertTrue('<div class="form-row field-is_published">' in table)
-        self.staff_member_client.post()
 
     def test_anonymous_user_cannot_add_question(self):
         response = self.anonymous_client.get(self.ADD_VIEW_URL, follow=True)
@@ -75,3 +75,33 @@ class AddViewTest(BaseAdminTestCase):
         self.assertTrue('<div class="form-row field-title">' in table)
         self.assertTrue('<div class="form-row field-body">' in table)
         self.assertTrue('<div class="form-row field-is_published">' not in table)
+
+
+class ChangeViewTest(BaseAdminTestCase):
+    CHANGE_VIEW_URL = "/questions/question/{}/change/"
+
+    @classmethod
+    def get_change_page_form(cls, client: Client, question_pk: int):
+        response = client.get(cls.CHANGE_VIEW_URL.format(question_pk), follow=True)
+        return str(BeautifulSoup(response.content, 'html.parser').find(id="question_form"))
+
+    # def test_staff_member_can_submit_three_fields(self):
+    #     if True: return
+    #     table = self.get_change_page_form(self.staff_member_client, 1)
+    #     self.assertTrue('<div class="form-row field-title">' in table)
+    #     self.assertTrue('<div class="form-row field-body">' in table)
+    #     self.assertTrue('<div class="form-row field-is_published">' in table)
+
+    def test_anonymous_user_cannot_view_but_not_change_question(self):
+        table = self.get_change_page_form(self.anonymous_client, self.question_1.pk)
+        self.assertInHTML('<label>Title:</label><div class="readonly">Lorem</div>', table)
+        self.assertInHTML('<label>Body:</label><div class="readonly">Foo bar</div>', table)
+        self.assertInHTML(
+            '<label>Creator:</label><div class="readonly"><a href="/auth/user/2/change/">user_1</a></div>', table)
+
+    # def test_regular_user_can_submit_two_fields(self):
+    #     if True: return
+    #     table = self.get_change_page_form(self.user_1_client)
+    #     self.assertTrue('<div class="form-row field-title">' in table)
+    #     self.assertTrue('<div class="form-row field-body">' in table)
+    #     self.assertTrue('<div class="form-row field-is_published">' not in table)

@@ -6,4 +6,7 @@ from questions.models import Question
 
 @admin.register(Question)
 class QuestionAdmin(ConfidentialModelAdmin):
-    pass
+
+    def save_model(self, request, obj, form, change):
+        if not change: obj.creator = request.user  # `not change` means the obj is added, not modified
+        super().save_model(request, obj, form, change)
