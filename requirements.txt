@@ -1,0 +1,3 @@
+beautifulsoup4 < 4.10
+Django < 3.3
+django-access-control @ file:///home/eeriksp/Develop/django-granular-permissions/granular-permissions
