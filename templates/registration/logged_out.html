@@ -1,0 +1,10 @@
+{% extends "registration/logged_out.html" %}
+{% load i18n %}
+
+{% block content %}
+
+Thank you for caring about ethics!
+
+<p><a href="{% url 'admin:login' %}">{% translate 'Log in again' %}</a></p>
+
+{% endblock %}
