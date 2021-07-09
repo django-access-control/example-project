@@ -85,23 +85,42 @@ class ChangeViewTest(BaseAdminTestCase):
         response = client.get(cls.CHANGE_VIEW_URL.format(question_pk), follow=True)
         return str(BeautifulSoup(response.content, 'html.parser').find(id="question_form"))
 
-    # def test_staff_member_can_submit_three_fields(self):
-    #     if True: return
-    #     table = self.get_change_page_form(self.staff_member_client, 1)
-    #     self.assertTrue('<div class="form-row field-title">' in table)
-    #     self.assertTrue('<div class="form-row field-body">' in table)
-    #     self.assertTrue('<div class="form-row field-is_published">' in table)
+    def test_anonymous_user_view(self):
+        """
+        Anonymous users and logged in users without special privileges can view but not change the question.
 
-    def test_anonymous_user_cannot_view_but_not_change_question(self):
+        As seen in the assert statements, all fields are displayed readonly, not as input cells.
+        """
         table = self.get_change_page_form(self.anonymous_client, self.question_1.pk)
         self.assertInHTML('<label>Title:</label><div class="readonly">Lorem</div>', table)
         self.assertInHTML('<label>Body:</label><div class="readonly">Foo bar</div>', table)
         self.assertInHTML(
             '<label>Creator:</label><div class="readonly"><a href="/auth/user/2/change/">user_1</a></div>', table)
 
-    # def test_regular_user_can_submit_two_fields(self):
-    #     if True: return
-    #     table = self.get_change_page_form(self.user_1_client)
-    #     self.assertTrue('<div class="form-row field-title">' in table)
-    #     self.assertTrue('<div class="form-row field-body">' in table)
-    #     self.assertTrue('<div class="form-row field-is_published">' not in table)
+    def test_author_view(self):
+        """
+        The author of the question can update the `body` and see `title`, `author` and `is_published` as readonly fields
+        """
+        table = self.get_change_page_form(self.user_1_client, self.question_1.pk)
+        self.assertInHTML('<label>Title:</label><div class="readonly">Lorem</div>', table)
+        # The label's `for` attribute is present only on editable fields
+        self.assertInHTML('<label class="required" for="id_body">Body:</label>', table)
+        self.assertInHTML(
+            '<label>Creator:</label><div class="readonly"><a href="/auth/user/2/change/">user_1</a></div>', table)
+        self.assertInHTML(
+            '<div><label>Is published:</label><div class="readonly"><img src="/static/admin/img/icon-yes.svg" '
+            'alt="True"></div></div>', table)
+
+    def test_staff_view(self):
+        """
+        The staff member can update the `body` and `is_published` fields and see `title` and `author` as readonly fields
+        """
+        table = self.get_change_page_form(self.staff_member_client, self.question_1.pk)
+        self.assertInHTML('<label>Title:</label><div class="readonly">Lorem</div>', table)
+        # The label's `for` attribute is present only on editable fields
+        self.assertInHTML('<label>Body:</label><div class="readonly">Foo bar</div>', table)
+        self.assertInHTML(
+            '<label>Creator:</label><div class="readonly"><a href="/auth/user/2/change/">user_1</a></div>', table)
+        self.assertInHTML(
+            '<input type="checkbox" name="is_published" id="id_is_published" checked="">'
+            '<label class="vCheckboxLabel" for="id_is_published">Is published</label>', table)
