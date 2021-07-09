@@ -12,17 +12,18 @@ from django_access_control.querysets import ConfidentialQuerySet
 
 class QuestionQuerySet(ConfidentialQuerySet):
     def has_table_wide_add_permission(self, user: AbstractUser) -> bool:
+        print("Add permission", user.is_authenticated)
         return user.is_authenticated
 
     def rows_with_extra_view_permission(self, user: AbstractUser) -> QuerySet[Question]:
         if user.is_staff:
             return self
-        return self.filter(is_published=True) | (self.filter(creator=user) if user.is_authenticated else self.none())
+        return self.filter(is_published=True) | (self.filter(author=user) if user.is_authenticated else self.none())
 
     def rows_with_extra_change_permission(self, user: AbstractUser) -> QuerySet[Question]:
         if user.is_staff:
             return self
-        return self.filter(creator=user) if user.is_authenticated else self.none()
+        return self.filter(author=user) if user.is_authenticated else self.none()
 
     @classmethod
     def addable_fields(cls, user: AbstractUser) -> FrozenSet[str]:
@@ -35,20 +36,21 @@ class QuestionQuerySet(ConfidentialQuerySet):
     @staticmethod
     def changeable_fields(user: AbstractUser, obj: Question) -> FrozenSet[str]:
         if user.is_superuser: return frozenset(all_field_names(obj.__class__))
-        if obj.creator == user: return frozenset({"body"})
-        if user.is_staff: return frozenset({"is_published"})
-        return frozenset()
+        fields = frozenset()
+        if obj.author == user: fields |= frozenset({"body"})
+        if user.is_staff: fields |= frozenset({"is_published"})
+        return fields
 
     @staticmethod
     def viewable_fields(user: AbstractUser, obj) -> FrozenSet[str]:
-        if user.is_superuser or user.is_staff or obj.creator == user: return frozenset(all_field_names(obj.__class__))
-        return frozenset({"title", "body", "creator"})
+        if user.is_superuser or user.is_staff or obj.author == user: return frozenset(all_field_names(obj.__class__))
+        return frozenset({"title", "body", "author"})
 
 
 class Question(models.Model):
-    title = models.CharField(max_length=30)
+    title = models.CharField(max_length=100)
     body = models.TextField()
-    creator = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
     is_published = models.BooleanField(default=True)
 
     objects = QuestionQuerySet.as_manager()

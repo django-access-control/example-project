@@ -20,8 +20,8 @@ class BaseAdminTestCase(TestCase):
         cls.user_2_client.login(username="user_2", password="xxx")
         cls.anonymous_client = Client()
 
-        cls.question_1 = Question.objects.create(title="Lorem", body="Foo bar", creator=cls.user_1)
-        cls.question_2 = Question.objects.create(title="Imsum", body="Foo bar", creator=cls.user_2, is_published=False)
+        cls.question_1 = Question.objects.create(title="Lorem", body="Foo bar", author=cls.user_1)
+        cls.question_2 = Question.objects.create(title="Imsum", body="Foo bar", author=cls.user_2, is_published=False)
 
 
 class ListViewTest(BaseAdminTestCase):
@@ -95,7 +95,7 @@ class ChangeViewTest(BaseAdminTestCase):
         self.assertInHTML('<label>Title:</label><div class="readonly">Lorem</div>', table)
         self.assertInHTML('<label>Body:</label><div class="readonly">Foo bar</div>', table)
         self.assertInHTML(
-            '<label>Creator:</label><div class="readonly"><a href="/auth/user/2/change/">user_1</a></div>', table)
+            '<label>Author:</label><div class="readonly"><a href="/auth/user/2/change/">user_1</a></div>', table)
 
     def test_author_view(self):
         """
@@ -106,7 +106,7 @@ class ChangeViewTest(BaseAdminTestCase):
         # The label's `for` attribute is present only on editable fields
         self.assertInHTML('<label class="required" for="id_body">Body:</label>', table)
         self.assertInHTML(
-            '<label>Creator:</label><div class="readonly"><a href="/auth/user/2/change/">user_1</a></div>', table)
+            '<label>Author:</label><div class="readonly"><a href="/auth/user/2/change/">user_1</a></div>', table)
         self.assertInHTML(
             '<div><label>Is published:</label><div class="readonly"><img src="/static/admin/img/icon-yes.svg" '
             'alt="True"></div></div>', table)
@@ -120,7 +120,7 @@ class ChangeViewTest(BaseAdminTestCase):
         # The label's `for` attribute is present only on editable fields
         self.assertInHTML('<label>Body:</label><div class="readonly">Foo bar</div>', table)
         self.assertInHTML(
-            '<label>Creator:</label><div class="readonly"><a href="/auth/user/2/change/">user_1</a></div>', table)
+            '<label>Author:</label><div class="readonly"><a href="/auth/user/2/change/">user_1</a></div>', table)
         self.assertInHTML(
             '<input type="checkbox" name="is_published" id="id_is_published" checked="">'
             '<label class="vCheckboxLabel" for="id_is_published">Is published</label>', table)

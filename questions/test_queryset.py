@@ -36,8 +36,8 @@ class BaseQuestionsTestCase(TestCase):
         cls.user_one = User.objects.create_user("user_one")
         cls.user_two = User.objects.create_user("user_two")
 
-        cls.question = Question.objects.create(title="Ipsum?", body="Lorem ipsum.", creator=cls.user_one)
-        cls.unpublished_question = Question.objects.create(title="?", body="?", creator=cls.user_one,
+        cls.question = Question.objects.create(title="Ipsum?", body="Lorem ipsum.", author=cls.user_one)
+        cls.unpublished_question = Question.objects.create(title="?", body="?", author=cls.user_one,
                                                            is_published=False)
 
 
@@ -177,7 +177,7 @@ class QuestionQuerySetTest(BaseQuestionsTestCase):
         self.assertFalse(self.qs.rows_with_change_permission(self.user_two).contains(self.question))
 
     def test_field_level_change_permission(self):
-        all_fields = frozenset({'title', 'is_published', 'body', 'creator'})
+        all_fields = frozenset({'title', 'is_published', 'body', 'author'})
         # Superusers can change all fields
         self.assertEqual(self.qs.changeable_fields(self.superuser, self.question), all_fields)
         # Authors can change only the body of their question
